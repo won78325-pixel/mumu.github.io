@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🦁 快樂英文拼字學習機</title>
+    <style>
+        :root {
+            --primary-color: #FFEB3B; /* 亮黃 */
+            --secondary-color: #4FC3F7; /* 天空藍 */
+            --accent-color: #FF7043; /* 活力橘 */
+            --text-color: #37474F;
+            --bg-color: #E0F7FA;
+            --card-bg: #ffffff;
+            --correct: #66BB6A;
+            --wrong: #EF5350;
+            --vowel-color: #D32F2F; /* 母音紅 */
+            --consonant-color: #1976D2; /* 子音藍 */
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 防止小孩誤選文字 */
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', '微軟正黑體', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 防止捲動 */
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--secondary-color);
+            padding: 10px 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            flex-grow: 1;
+        }
+
+        .controls select {
+            padding: 8px;
+            border-radius: 20px;
+            border: 2px solid #fff;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* --- Tabs --- */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            background: #fff;
+            padding: 10px 0 0 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #90A4AE;
+            border-bottom: 4px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            max-width: 150px;
+        }
+
+        .tab-btn.active {
+            color: var(--secondary-color);
+            border-bottom-color: var(--secondary-color);
+        }
+
+        /* --- Main Content --- */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 30px;
+            width: 95%;
+            max-width: 600px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 300px;
+            justify-content: center;
+        }
+
+        /* Mode A: Learning */
+        .word-display {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        .syllable-display {
+            font-size: 1.5rem;
+            color: #78909C;
+            margin-bottom: 15px;
+            height: 1.8rem; /* Placeholder height */
+        }
+
+        .meaning-display {
+            font-size: 1.8rem;
+            color: #546E7A;
+            margin-top: 10px;
+        }
+
+        .vowel { color: var(--vowel-color); }
+        .consonant { color: var(--consonant-color); }
+
+        .btn-toggle {
+            background: #ECEFF1;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 15px;
+            color: #546E7A;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Mode B: Blocks */
+        .blocks-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+
+        .letter-slot-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            min-height: 50px;
+            border-bottom: 2px dashed #CFD8DC;
+            padding-bottom: 10px;
+            width: 100%;
+        }
+
+        .block-btn {
+            width: 45px;
+            height: 45px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #0288D1;
+            transition: transform 0.1s;
+        }
+
+        .block-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .block-btn.used {
+            opacity: 0.3;
+            pointer-events: none;
+            box-shadow: none;
+            transform: translateY(4px);
+        }
+
+        .slot-block {
+            width: 45px;
+            height: 45px;
+            background: #fff;
+            border: 2px solid var(--secondary-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        
+        .slot-block.space {
+            border: none;
+            background: transparent;
+            width: 20px;
+        }
+
+        /* Mode C: Dictation */
+        .input-area {
+            margin: 20px 0;
+        }
+
+        #dictation-input {
+            font-size: 2rem;
+            padding: 10px;
+            border: 3px solid var(--secondary-color);
+            border-radius: 15px;
+            width: 80%;
+            text-align: center;
+            outline: none;
+        }
+
+        #dictation-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* Feedback */
+        .feedback {
+            font-size: 1.5rem;
+            font-weight: bold;
+            height: 2rem;
+            margin-top: 10px;
+        }
+        .feedback.correct { color: var(--correct); }
+        .feedback.wrong { color: var(--wrong); }
+
+        /* --- Footer --- */
+        footer {
+            background: #fff;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn {
+            background: var(--primary-color);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #FBC02D;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .nav-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .speak-btn {
+            background: var(--accent-color);
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+            box-shadow: 0 5px 0 #E64A19;
+            color: white;
+        }
+        
+        .speak-btn:active {
+            box-shadow: none;
+            transform: translateY(5px);
+        }
+
+        /* Animation */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .anim-shake { animation: shake 0.3s; }
+        .anim-pop { animation: pop 0.2s; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .word-display { font-size: 2.5rem; }
+            .block-btn, .slot-block { width: 35px; height: 35px; font-size: 1.2rem; }
+            #dictation-input { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="top-bar">
+        <h1>🦁 Spelling Bee</h1>
+        <div class="controls">
+            <select id="voice-select" title="選擇發音">
+                <option value="">載入語音中...</option>
+            </select>
+            <select id="level-select" title="選擇等級">
+                <!-- Levels will be injected here -->
+            </select>
+        </div>
+    </div>
+</header>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="setMode('learn')">📖 學習</button>
+    <button class="tab-btn" onclick="setMode('blocks')">🧩 積木</button>
+    <button class="tab-btn" onclick="setMode('dictation')">✍️ 聽寫</button>
+</div>
+
+<main>
+    <!-- Content injected by JS -->
+    <div class="card" id="game-card">
+        <!-- Dynamic Content -->
+    </div>
+</main>
+
+<footer>
+    <button class="nav-btn" onclick="prevWord()">⬅️</button>
+    <button class="nav-btn speak-btn" onclick="playAudio()">🔊</button>
+    <button class="nav-btn" onclick="nextWord()">➡️</button>
+</footer>
+
+<script>
+    // --- Data ---
+    const rawData = [
+        {w:"aunt", s:"aunt", m:"阿姨；伯母"},
+        {w:"backpack", s:"back-pack", m:"背包"},
+        {w:"bagel", s:"ba-gel", m:"培果"},
+        {w:"Barbie doll", s:"Bar-bie doll", m:"芭比娃娃"},
+        {w:"baseball bat", s:"base-ball bat", m:"棒球棒"},
+        {w:"baseball glove", s:"base-ball glove", m:"棒球手套"},
+        {w:"bear", s:"bear", m:"熊"},
+        {w:"beef noodles", s:"beef noo-dles", m:"牛肉麵"},
+        {w:"bill", s:"bill", m:"帳單；鈔票"},
+        {w:"black", s:"black", m:"黑色"},
+        {w:"blue", s:"blue", m:"藍色"},
+        {w:"blueberry", s:"blue-ber-ry", m:"藍莓"},
+        {w:"bottle", s:"bot-tle", m:"瓶子"},
+        {w:"camera", s:"cam-er-a", m:"照相機"},
+        {w:"circle", s:"cir-cle", m:"圓形"},
+        {w:"classroom", s:"class-room", m:"教室"},
+        {w:"coffee", s:"cof-fee", m:"咖啡"},
+        {w:"color", s:"col-or", m:"顏色"},
+        {w:"cone", s:"cone", m:"甜筒"},
+        {w:"cookie", s:"cook-ie", m:"餅乾"},
+        {w:"cousin", s:"cou-sin", m:"堂/表兄弟姊妹"},
+        {w:"cream puff", s:"cream puff", m:"奶油泡芙"},
+        {w:"diamond", s:"dia-mond", m:"菱形"},
+        {w:"doll", s:"doll", m:"娃娃；玩偶"},
+        {w:"door", s:"door", m:"門"},
+        {w:"drink", s:"drink", m:"飲料；喝"},
+        {w:"dumpling", s:"dump-ling", m:"水餃"},
+        {w:"eighteenth", s:"eight-eenth", m:"第十八的"},
+        {w:"eighth", s:"eighth", m:"第八的"},
+        {w:"eleventh", s:"e-lev-enth", m:"第十一的"},
+        {w:"faucet", s:"fau-cet", m:"水龍頭"},
+        {w:"finger", s:"fin-ger", m:"手指"},
+        {w:"fridge", s:"fridge", m:"冰箱"},
+        {w:"fruit", s:"fruit", m:"水果"},
+        {w:"glove", s:"glove", m:"手套"},
+        {w:"grandfather", s:"grand-fath-er", m:"爺爺；外公"},
+        {w:"grandmother", s:"grand-moth-er", m:"奶奶；外婆"},
+        {w:"grandparents", s:"grand-par-ents", m:"祖父母"},
+        {w:"grapes", s:"grapes", m:"葡萄"},
+        {w:"green", s:"green", m:"綠色"},
+        {w:"guava", s:"gua-va", m:"芭樂"},
+        {w:"gun", s:"gun", m:"槍"},
+        {w:"hairdryer", s:"hair-dry-er", m:"吹風機"},
+        {w:"hamburger", s:"ham-bur-ger", m:"漢堡"},
+        {w:"hat", s:"hat", m:"帽子"},
+        {w:"head", s:"head", m:"頭"},
+        {w:"heart", s:"heart", m:"心形"},
+        {w:"home", s:"home", m:"家"},
+        {w:"hot dog", s:"hot dog", m:"熱狗"},
+        {w:"hungry", s:"hun-gry", m:"餓的"},
+        {w:"ice cream cone", s:"ice cream cone", m:"蛋捲冰淇淋"},
+        {w:"juice", s:"juice", m:"果汁"},
+        {w:"knee", s:"knee", m:"膝蓋"},
+        {w:"laptop", s:"lap-top", m:"膝上型電腦"},
+        {w:"line", s:"line", m:"線"},
+        {w:"lock", s:"lock", m:"上鎖"},
+        {w:"lollipop", s:"lol-li-pop", m:"棒棒糖"},
+        {w:"lychee", s:"ly-chee", m:"荔枝"},
+        {w:"mango", s:"man-go", m:"芒果"},
+        {w:"many", s:"man-y", m:"許多的"},
+        {w:"meal", s:"meal", m:"餐"},
+        {w:"melon", s:"mel-on", m:"哈密瓜"},
+        {w:"memory", s:"mem-or-y", m:"記憶"},
+        {w:"menu", s:"men-u", m:"菜單"},
+        {w:"noodles", s:"noo-dles", m:"麵條"},
+        {w:"order", s:"or-der", m:"點餐；點"},
+        {w:"oval", s:"ov-al", m:"橢圓形"},
+        {w:"papaya", s:"pa-pa-ya", m:"木瓜"},
+        {w:"parents", s:"par-ents", m:"父母親"},
+        {w:"park", s:"park", m:"公園"},
+        {w:"password", s:"pass-word", m:"密碼"},
+        {w:"pear", s:"pear", m:"梨子"},
+        {w:"people", s:"peo-ple", m:"人們"},
+        {w:"phone", s:"phone", m:"電話"},
+        {w:"pink", s:"pink", m:"粉紅色"},
+        {w:"pizza", s:"piz-za", m:"披薩"},
+        {w:"potato", s:"po-ta-to", m:"馬鈴薯"},
+        {w:"pudding", s:"pud-ding", m:"布丁"},
+        {w:"purple", s:"pur-ple", m:"紫色"},
+        {w:"read", s:"read", m:"閱讀"},
+        {w:"rectangle", s:"rec-tan-gle", m:"長方形"},
+        {w:"red", s:"red", m:"紅色"},
+        {w:"rinse", s:"rinse", m:"沖洗"},
+        {w:"salad", s:"sal-ad", m:"沙拉"},
+        {w:"sandwich", s:"sand-wich", m:"三明治"},
+        {w:"second", s:"sec-ond", m:"第二的"},
+        {w:"seventeenth", s:"sev-en-teenth", m:"第十七的"},
+        {w:"seventh", s:"sev-enth", m:"第七的"},
+        {w:"shampoo", s:"sham-poo", m:"洗髮精"},
+        {w:"shop", s:"shop", m:"商店"},
+        {w:"shoulder", s:"shoul-der", m:"肩膀"},
+        {w:"sixth", s:"sixth", m:"第六的"},
+        {w:"sixteenth", s:"six-teenth", m:"第十六的"},
+        {w:"skateboard", s:"skate-board", m:"滑板"},
+        {w:"smartphone", s:"smart-phone", m:"智慧型手機"},
+        {w:"soda", s:"so-da", m:"汽水"},
+        {w:"speak", s:"speak", m:"說話"},
+        {w:"square", s:"square", m:"正方形"},
+        {w:"star", s:"star", m:"星星"},
+        {w:"sticker", s:"stick-er", m:"貼紙"},
+        {w:"strawberry", s:"straw-ber-ry", m:"草莓"},
+        {w:"sweet", s:"sweet", m:"甜的"},
+        {w:"teddy bear", s:"ted-dy bear", m:"泰迪熊"},
+        {w:"teeth", s:"teeth", m:"牙齒"},
+        {w:"tenth", s:"tenth", m:"第十的"},
+        {w:"third", s:"third", m:"第三的"},
+        {w:"thirteenth", s:"thir-teenth", m:"第十三的"},
+        {w:"thirtieth", s:"thir-ti-eth", m:"第三十的"},
+        {w:"thirty", s:"thir-ty", m:"三十的"},
+        {w:"ticket", s:"tick-et", m:"票"},
+        {w:"tissue", s:"tis-sue", m:"衛生紙"},
+        {w:"toe", s:"toe", m:"腳趾"},
+        {w:"toilet", s:"toi-let", m:"廁所"},
+        {w:"tomato", s:"to-ma-to", m:"番茄"},
+        {w:"too", s:"too", m:"也"},
+        {w:"toothbrush", s:"tooth-brush", m:"牙刷"},
+        {w:"toothpaste", s:"tooth-paste", m:"牙膏"},
+        {w:"toy gun", s:"toy gun", m:"玩具槍"},
+        {w:"triangle", s:"tri-an-gle", m:"三角形"},
+        {w:"twelfth", s:"twelfth", m:"第十二的"},
+        {w:"twentieth", s:"twen-ti-eth", m:"第二十的"},
+        {w:"twenty", s:"twen-ty", m:"二十"},
+        {w:"umbrella", s:"um-brel-la", m:"雨傘"},
+        {w:"uncle", s:"un-cle", m:"叔叔；伯伯"},
+        {w:"waffle", s:"waf-fle", m:"鬆餅"},
+        {w:"waitress", s:"wait-ress", m:"女服務生"},
+        {w:"want", s:"want", m:"想要"},
+        {w:"watermelon", s:"wat-er-mel-on", m:"西瓜"},
+        {w:"water bottle", s:"wat-er bot-tle", m:"水壺"},
+        {w:"white", s:"white", m:"白色"},
+        {w:"window", s:"win-dow", m:"窗戶"},
+        {w:"yellow", s:"yel-low", m:"黃色"}
+    ];
+
+    // --- State Management ---
+    let currentMode = 'learn'; // learn, blocks, dictation
+    let currentLevel = 0; // 0 = all
+    let currentIndex = 0;
+    let filteredWords = [];
+    let showSyllables = false;
+    let synth = window.speechSynthesis;
+    let voices = [];
+    let selectedVoice = null;
+    let blockUserAnswer = []; // For block mode
+
+    // --- Initialization ---
+    window.onload = function() {
+        populateVoices();
+        initLevels();
+        filterWords();
+        render();
+        
+        // Handle voice loading async quirk
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+    };
+
+    function populateVoices() {
+        voices = synth.getVoices().sort(function (a, b) {
+            const aname = a.name.toUpperCase();
+            const bname = b.name.toUpperCase();
+            if (aname < bname) return -1;
+            else if (aname == bname) return 0;
+            else return +1;
+        });
+
+        const voiceSelect = document.getElementById('voice-select');
+        voiceSelect.innerHTML = '';
+        
+        let defaultFound = false;
+
+        voices.forEach((voice) => {
+            // Filter for English primarily for UX but allow others
+            if(voice.lang.includes('en') || voice.lang.includes('US') || voice.lang.includes('UK')){
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.name;
+                
+                // Smart default selection
+                if (!defaultFound && (voice.name.includes('Google US') || voice.name.includes('Samantha') || voice.lang === 'en-US')) {
+                    option.selected = true;
+                    selectedVoice = voice;
+                    defaultFound = true;
+                }
+                
+                voiceSelect.appendChild(option);
+            }
+        });
+
+        // Add a generic fallback if no english voices found (rare)
+        if (voiceSelect.options.length === 0) {
+             voices.forEach((voice) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.name;
+                voiceSelect.appendChild(option);
+             });
+        }
+
+        voiceSelect.onchange = function() {
+            selectedVoice = voices.find(v => v.name === this.value);
+            playAudio();
+        };
+    }
+
+    function initLevels() {
+        const select = document.getElementById('level-select');
+        const totalLevels = Math.ceil(rawData.length / 10);
+        
+        const optAll = document.createElement('option');
+        optAll.value = 0;
+        optAll.textContent = `全部單字 (${rawData.length})`;
+        select.appendChild(optAll);
+
+        for(let i=1; i<=totalLevels; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = `Level ${i} (${(i-1)*10+1} - ${Math.min(i*10, rawData.length)})`;
+            select.appendChild(opt);
+        }
+
+        select.onchange = function() {
+            currentLevel = parseInt(this.value);
+            currentIndex = 0;
+            filterWords();
+            render();
+        };
+    }
+
+    function filterWords() {
+        if(currentLevel === 0) {
+            filteredWords = [...rawData];
+        } else {
+            const start = (currentLevel - 1) * 10;
+            const end = start + 10;
+            filteredWords = rawData.slice(start, end);
+        }
+    }
+
+    // --- Logic ---
+    function setMode(mode) {
+        currentMode = mode;
+        // Update Tabs UI
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        render();
+    }
+
+    function playAudio() {
+        if(!filteredWords[currentIndex]) return;
+        
+        if (synth.speaking) {
+            synth.cancel();
+        }
+        
+        const utterThis = new SpeechSynthesisUtterance(filteredWords[currentIndex].w);
+        if(selectedVoice) utterThis.voice = selectedVoice;
+        utterThis.rate = 0.8; // Slower for kids
+        utterThis.pitch = 1.1; // Slightly higher
+        synth.speak(utterThis);
+    }
+
+    function prevWord() {
+        if(currentIndex > 0) {
+            currentIndex--;
+            render();
+            // Auto play audio in Game modes
+            if(currentMode !== 'learn') setTimeout(playAudio, 300);
+        }
+    }
+
+    function nextWord() {
+        if(currentIndex < filteredWords.length - 1) {
+            currentIndex++;
+            render();
+            if(currentMode !== 'learn') setTimeout(playAudio, 300);
+        }
+    }
+
+    function isVowel(char) {
+        return ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'].includes(char);
+    }
+
+    function toggleSyllables() {
+        showSyllables = !showSyllables;
+        const sylDiv = document.querySelector('.syllable-display');
+        if(sylDiv) {
+            sylDiv.style.visibility = showSyllables ? 'visible' : 'hidden';
+            // Update button text
+            document.getElementById('syl-toggle-btn').innerText = showSyllables ? '🙈 隱藏音節' : '👀 顯示音節';
+        }
+    }
+
+    // --- Rendering ---
+    function render() {
+        const card = document.getElementById('game-card');
+        const wordData = filteredWords[currentIndex];
+        
+        if(!wordData) return;
+
+        card.innerHTML = ''; // Clear
+
+        // 1. Common Top (Meaning) for Game Modes, or Bottom for Learn
+        if(currentMode !== 'learn') {
+            const hint = document.createElement('div');
+            hint.className = 'meaning-display';
+            hint.textContent = wordData.m;
+            card.appendChild(hint);
+        }
+
+        // 2. Specific Mode Content
+        if (currentMode === 'learn') {
+            renderLearnMode(card, wordData);
+        } else if (currentMode === 'blocks') {
+            renderBlocksMode(card, wordData);
+        } else if (currentMode === 'dictation') {
+            renderDictationMode(card, wordData);
+        }
+
+        // 3. Feedback Area (Appended inside render functions or here)
+    }
+
+    function renderLearnMode(container, data) {
+        // Colorize Word
+        const wordContainer = document.createElement('div');
+        wordContainer.className = 'word-display';
+        
+        // Handle logic to color vowels/consonants but keep original formatting (spaces)
+        for(let char of data.w) {
+            const span = document.createElement('span');
+            if(isVowel(char)) span.className = 'vowel';
+            else if (/[a-zA-Z]/.test(char)) span.className = 'consonant';
+            
+            span.textContent = char;
+            wordContainer.appendChild(span);
+        }
+        container.appendChild(wordContainer);
+
+        // Syllable
+        const sylDiv = document.createElement('div');
+        sylDiv.className = 'syllable-display';
+        sylDiv.textContent = data.s;
+        sylDiv.style.visibility = showSyllables ? 'visible' : 'hidden';
+        container.appendChild(sylDiv);
+
+        // Toggle Btn
+        const btn = document.createElement('button');
+        btn.id = 'syl-toggle-btn';
+        btn.className = 'btn-toggle';
+        btn.textContent = showSyllables ? '🙈 隱藏音節' : '👀 顯示音節';
+        btn.onclick = toggleSyllables;
+        container.appendChild(btn);
+
+        // Meaning
+        const meanDiv = document.createElement('div');
+        meanDiv.className = 'meaning-display';
+        meanDiv.textContent = data.m;
+        container.appendChild(meanDiv);
+    }
+
+    function renderBlocksMode(container, data) {
+        blockUserAnswer = [];
+        const targetWord = data.w;
+        
+        // Slot Area (Where users drop letters)
+        const slotArea = document.createElement('div');
+        slotArea.className = 'letter-slot-area';
+        
+        // Pre-render slots (handle spaces)
+        for(let i=0; i<targetWord.length; i++) {
+            const char = targetWord[i];
+            const slot = document.createElement('div');
+            slot.className = 'slot-block';
+            slot.dataset.index = i;
+            if(char === ' ') {
+                slot.classList.add('space');
+                slot.innerHTML = '&nbsp;';
+                blockUserAnswer[i] = ' '; // Auto fill space
+            } else {
+                slot.onclick = () => removeBlock(i); // Click slot to remove
+            }
+            slotArea.appendChild(slot);
+        }
+        container.appendChild(slotArea);
+
+        // Blocks Area (Scrambled)
+        const blockArea = document.createElement('div');
+        blockArea.className = 'blocks-area';
+        
+        // Prepare blocks (skip spaces for buttons)
+        let letters = targetWord.split('').map((char, originalIndex) => ({char, originalIndex})).filter(o => o.char !== ' ');
+        
+        // Shuffle
+        letters.sort(() => Math.random() - 0.5);
+
+        letters.forEach((item, id) => {
+            const btn = document.createElement('button');
+            btn.className = 'block-btn';
+            btn.textContent = item.char;
+            btn.dataset.char = item.char;
+            btn.id = `blk-${id}`; // unique ID for animation logic
+            
+            btn.onclick = function() {
+                // Find first empty slot
+                const firstEmptyIndex = blockUserAnswer.findIndex(val => val === undefined);
+                // Handle skipping spaces
+                let actualIndex = -1;
+                for(let i=0; i<targetWord.length; i++) {
+                    if(blockUserAnswer[i] === undefined && targetWord[i] !== ' ') {
+                        actualIndex = i;
+                        break;
+                    }
+                }
+
+                if(actualIndex !== -1) {
+                    blockUserAnswer[actualIndex] = item.char;
+                    btn.classList.add('used');
+                    // Update slot UI
+                    const slots = slotArea.querySelectorAll('.slot-block');
+                    slots[actualIndex].textContent = item.char;
+                    slots[actualIndex].dataset.fromBlockId = btn.id;
+                    
+                    checkBlockAnswer(targetWord);
+                }
+            };
+            blockArea.appendChild(btn);
+        });
+        container.appendChild(blockArea);
+
+        // Feedback
+        const fb = document.createElement('div');
+        fb.id = 'block-feedback';
+        fb.className = 'feedback';
+        container.appendChild(fb);
+    }
+
+    function removeBlock(slotIndex) {
+        if(blockUserAnswer[slotIndex] && filteredWords[currentIndex].w[slotIndex] !== ' ') {
+            // Find origin button
+            const slot = document.querySelectorAll('.slot-block')[slotIndex];
+            const btnId = slot.dataset.fromBlockId;
+            if(btnId) {
+                const btn = document.getElementById(btnId);
+                btn.classList.remove('used');
+            }
+            
+            // Clear Data
+            blockUserAnswer[slotIndex] = undefined;
+            slot.textContent = '';
+            slot.dataset.fromBlockId = '';
+            document.getElementById('block-feedback').textContent = '';
+        }
+    }
+
+    function checkBlockAnswer(target) {
+        // Fill undefined spaces for comparison if any (though logic handles it)
+        if(blockUserAnswer.length !== target.length) return;
+        if(blockUserAnswer.includes(undefined)) return;
+
+        const attempt = blockUserAnswer.join('');
+        const fb = document.getElementById('block-feedback');
+        
+        if(attempt === target) {
+            fb.textContent = "🎉 Excellent!";
+            fb.className = "feedback correct anim-pop";
+            playAudio();
+        } else {
+             // Shouldn't happen often in block mode unless similar letters, but logical check
+        }
+    }
+
+    function renderDictationMode(container, data) {
+        const inputDiv = document.createElement('div');
+        inputDiv.className = 'input-area';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'dictation-input';
+        input.placeholder = 'Type here...';
+        input.autocomplete = 'off';
+        
+        input.onkeyup = function(e) {
+            if(e.key === 'Enter') {
+                checkDictation(data.w);
+            }
+        };
+
+        inputDiv.appendChild(input);
+        container.appendChild(inputDiv);
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'btn-toggle';
+        submitBtn.style.background = 'var(--secondary-color)';
+        submitBtn.style.color = 'white';
+        submitBtn.innerText = 'Check';
+        submitBtn.onclick = () => checkDictation(data.w);
+        container.appendChild(submitBtn);
+
+        const fb = document.createElement('div');
+        fb.id = 'dictation-feedback';
+        fb.className = 'feedback';
+        container.appendChild(fb);
+        
+        // Auto focus
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function checkDictation(target) {
+        const input = document.getElementById('dictation-input');
+        const fb = document.getElementById('dictation-feedback');
+        const val = input.value.trim();
+
+        if(val.toLowerCase() === target.toLowerCase()) {
+            fb.textContent = "✨ Correct! Good Job!";
+            fb.className = "feedback correct anim-pop";
+            input.style.borderColor = "var(--correct)";
+            playAudio();
+        } else {
+            fb.textContent = "Try Again!";
+            fb.className = "feedback wrong anim-shake";
+            input.style.borderColor = "var(--wrong)";
+            setTimeout(() => {
+                fb.classList.remove('anim-shake');
+            }, 500);
+        }
+    }
+
+</script>
+
+</body>
+</html>
